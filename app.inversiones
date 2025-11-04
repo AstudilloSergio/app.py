@@ -1,0 +1,308 @@
+# Analizador de Inversiones GUI
+import tkinter as tk
+from tkinter import messagebox
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import numpy as np
+
+
+class AnalizadorInversiones:
+    def __init__(self):
+        self.ventana = tk.Tk()
+        self.ventana.title("💰 Analizador de Inversiones")
+        self.ventana.geometry("800x700")
+        self.ventana.configure(bg="#f0f0f0")
+
+        # Variables
+        self.capital_inicial = tk.StringVar(value="1000")
+        self.tasa_interes = tk.StringVar(value="8")
+        self.tiempo_anos = tk.StringVar(value="10")
+
+        self.crear_interfaz()
+
+    def crear_interfaz(self):
+        # Título
+        titulo = tk.Label(
+            self.ventana,
+            text="💰 ANALIZADOR DE INVERSIONES",
+            font=("Arial", 22, "bold"),
+            bg="#f0f0f0",
+            fg="#2c3e50",
+        )
+        titulo.pack(pady=20)
+
+        # Frame entrada
+        self.crear_frame_entrada()
+
+        # Botones
+        self.crear_botones()
+
+        # Resultados
+        self.crear_frame_resultados()
+
+        # Gráfico
+        self.crear_frame_grafico()
+
+    def crear_frame_entrada(self):
+        frame = tk.Frame(self.ventana, bg="#f0f0f0", relief="raised", bd=2)
+        frame.pack(pady=20, padx=20, fill="x")
+
+        tk.Label(
+            frame,
+            text="📊 DATOS DE LA INVERSIÓN",
+            font=("Arial", 16, "bold"),
+            bg="#f0f0f0",
+            fg="#34495e",
+        ).pack(pady=10)
+
+        # Capital
+        tk.Label(
+            frame,
+            text="💰 Capital Inicial ($):",
+            bg="#f0f0f0",
+            font=("Arial", 12, "bold"),
+        ).pack()
+        tk.Entry(
+            frame,
+            textvariable=self.capital_inicial,
+            font=("Arial", 12),
+            width=25,
+            justify="center",
+        ).pack(pady=5)
+
+        # Tasa
+        tk.Label(
+            frame,
+            text="📈 Tasa de Interés (% anual):",
+            bg="#f0f0f0",
+            font=("Arial", 12, "bold"),
+        ).pack()
+        tk.Entry(
+            frame,
+            textvariable=self.tasa_interes,
+            font=("Arial", 12),
+            width=25,
+            justify="center",
+        ).pack(pady=5)
+
+        # Tiempo
+        tk.Label(
+            frame, text="⏰ Tiempo (años):", bg="#f0f0f0", font=("Arial", 12, "bold")
+        ).pack()
+        tk.Entry(
+            frame,
+            textvariable=self.tiempo_anos,
+            font=("Arial", 12),
+            width=25,
+            justify="center",
+        ).pack(pady=5)
+
+    def crear_botones(self):
+        frame = tk.Frame(self.ventana, bg="#f0f0f0")
+        frame.pack(pady=20)
+
+        tk.Button(
+            frame,
+            text="🧮 CALCULAR INVERSIÓN",
+            font=("Arial", 14, "bold"),
+            bg="#27ae60",
+            fg="white",
+            width=20,
+            height=2,
+            command=self.calcular_inversion,
+        ).pack(pady=10)
+
+        tk.Button(
+            frame,
+            text="🔄 LIMPIAR",
+            font=("Arial", 12, "bold"),
+            bg="#e74c3c",
+            fg="white",
+            width=15,
+            height=1,
+            command=self.limpiar_datos,
+        ).pack(pady=5)
+
+    def crear_frame_resultados(self):
+        frame = tk.Frame(self.ventana, bg="#f0f0f0", relief="raised", bd=2)
+        frame.pack(pady=20, padx=20, fill="x")
+
+        tk.Label(
+            frame,
+            text="📊 RESULTADOS",
+            font=("Arial", 16, "bold"),
+            bg="#f0f0f0",
+            fg="#34495e",
+        ).pack(pady=10)
+
+        self.frame_resultados = tk.Frame(frame, bg="#f0f0f0")
+        self.frame_resultados.pack(pady=10)
+
+        tk.Label(
+            self.frame_resultados,
+            text="Ingresa datos y presiona CALCULAR",
+            font=("Arial", 12),
+            bg="#f0f0f0",
+            fg="#7f8c8d",
+        ).pack()
+
+    def crear_frame_grafico(self):
+        frame = tk.Frame(self.ventana, bg="#f0f0f0", relief="raised", bd=2)
+        frame.pack(pady=20, padx=20, fill="both", expand=True)
+
+        tk.Label(
+            frame,
+            text="📈 GRÁFICO DE CRECIMIENTO",
+            font=("Arial", 16, "bold"),
+            bg="#f0f0f0",
+            fg="#34495e",
+        ).pack(pady=10)
+
+        self.frame_grafico = tk.Frame(frame, bg="white")
+        self.frame_grafico.pack(pady=10, fill="both", expand=True)
+
+    def validar_entradas(self):
+        try:
+            capital = float(self.capital_inicial.get())
+            tasa = float(self.tasa_interes.get())
+            tiempo = float(self.tiempo_anos.get())
+
+            if capital <= 0 or tasa < 0 or tiempo <= 0:
+                messagebox.showerror("Error", "Todos los valores deben ser positivos")
+                return False
+            return True
+        except ValueError:
+            messagebox.showerror("Error", "Ingresa solo números válidos")
+            return False
+
+    def calcular_inversion(self):
+        if not self.validar_entradas():
+            return
+
+        try:
+            capital = float(self.capital_inicial.get())
+            tasa = float(self.tasa_interes.get()) / 100
+            tiempo = float(self.tiempo_anos.get())
+
+            capital_final = capital * (1 + tasa) ** tiempo
+            interes_ganado = capital_final - capital
+            crecimiento = ((capital_final / capital) - 1) * 100
+
+            self.mostrar_resultados(
+                capital, tasa * 100, tiempo, capital_final, interes_ganado, crecimiento
+            )
+            self.crear_grafico(capital, tasa, tiempo)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error en el cálculo: {str(e)}")
+
+    def mostrar_resultados(
+        self, capital, tasa, tiempo, capital_final, interes_ganado, crecimiento
+    ):
+        for widget in self.frame_resultados.winfo_children():
+            widget.destroy()
+
+        # Solo mostrar los 3 resultados MÁS IMPORTANTES
+        resultados_importantes = [
+            ("💰 Capital Final:", "${:,.2f}".format(capital_final)),
+            ("💸 Interés Ganado:", "${:,.2f}".format(interes_ganado)),
+            ("🚀 Crecimiento:", "{:.1f}%".format(crecimiento)),
+        ]
+
+        # Frame principal
+        frame_principal = tk.Frame(self.frame_resultados, bg="#f0f0f0")
+        frame_principal.pack(fill="x", pady=10)
+
+        for etiqueta, valor in resultados_importantes:
+            # Frame para cada fila
+            frame_fila = tk.Frame(frame_principal, bg="#f0f0f0")
+            frame_fila.pack(fill="x", pady=3)
+
+            # Etiqueta
+            lbl_etiqueta = tk.Label(
+                frame_fila,
+                text=etiqueta,
+                font=("Arial", 12, "bold"),
+                bg="#f0f0f0",
+                fg="#2c3e50",
+                width=18,
+                anchor="w",
+            )
+            lbl_etiqueta.pack(side="left", padx=10)
+
+            # Valor
+            lbl_valor = tk.Label(
+                frame_fila,
+                text=valor,
+                font=("Arial", 12, "bold"),
+                bg="#f0f0f0",
+                fg="#27ae60",
+                width=15,
+                anchor="w",
+            )
+            lbl_valor.pack(side="left", padx=10)
+
+    def crear_grafico(self, capital, tasa, tiempo):
+        for widget in self.frame_grafico.winfo_children():
+            widget.destroy()
+
+        try:
+            # Crear años desde 0 hasta el tiempo final
+            anos = list(range(int(tiempo) + 1))
+            # Calcular el capital para cada año
+            capital_por_ano = [capital * (1 + tasa) ** año for año in anos]
+
+            # Crear la figura y el gráfico
+            fig, ax = plt.subplots(figsize=(10, 6))
+
+            # Dibujar la línea azul con puntos
+            ax.plot(anos, capital_por_ano, "b-", linewidth=2, marker="o", markersize=4)
+            # Rellenar el área bajo la curva
+            ax.fill_between(anos, capital_por_ano, alpha=0.3, color="blue")
+
+            # Personalizar el gráfico
+            ax.set_title("Crecimiento de la Inversión", fontsize=14, fontweight="bold")
+            ax.set_xlabel("Años", fontsize=12)
+            ax.set_ylabel("Capital ($)", fontsize=12)
+            ax.grid(True, alpha=0.3)
+
+            # Formatear los números con comas (1000 -> 1,000)
+            ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, p: f"${x:,.0f}"))
+
+            # Ajustar el diseño
+            plt.tight_layout()
+
+            # Integrar el gráfico en la interfaz
+            canvas = FigureCanvasTkAgg(fig, self.frame_grafico)
+            canvas.draw()
+            canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al crear gráfico: {str(e)}")
+
+    def limpiar_datos(self):
+        self.capital_inicial.set("1000")
+        self.tasa_interes.set("8")
+        self.tiempo_anos.set("10")
+
+        for widget in self.frame_resultados.winfo_children():
+            widget.destroy()
+
+        tk.Label(
+            self.frame_resultados,
+            text="Ingresa datos y presiona CALCULAR",
+            font=("Arial", 12),
+            bg="#f0f0f0",
+            fg="#7f8c8d",
+        ).pack()
+
+        for widget in self.frame_grafico.winfo_children():
+            widget.destroy()
+
+    def ejecutar(self):
+        self.ventana.mainloop()
+
+
+if __name__ == "__main__":
+    app = AnalizadorInversiones()
+    app.ejecutar()
